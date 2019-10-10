@@ -1,0 +1,34 @@
+version: "3.7"
+services:
+ apache:
+  image: test/phpapache
+  container_name: myapache
+  depends_on: 
+  - mysql
+  build: 
+   context: .
+   dockerfile: Dockerfile
+   args:
+    vhostname: testhost
+  ports:
+  - "8080:80"
+  restart: unless-stopped
+  links:
+  - mysql
+  healthcheck:
+   test: ["CMD", "curl", "-f","http://localhostxxxx"]
+   interval: 1m
+   timeout: 3s
+   retries: 2
+   start_period: 15s
+ mysql:
+  image: mysql:latest
+  environment:
+  - "MYSQL_ROOT_PASSWORD=1234" 
+#  logging:
+#   driver: none
+  volumes:
+   - db:/var/lib/mysql
+   - /dev/shm:/dev/shm
+volumes:
+ db:
