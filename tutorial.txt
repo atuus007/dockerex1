@@ -1,0 +1,395 @@
+linux alapok :|
+whoami, man pwd su (CentOS=sudo su), passwd
+/etc/passwd /etc/shadow, mount -t milyen fájlrendszer
+sshfs 
+mount --bind honnan hova
+df csatolt eszközök mi az eszköz fjlrendszerben hol jelenik meg
+du -h --max-depth=1 /tmp mélység+ olvasható formátum
+fdisk particio kezelés
+lvdisplay 
+head/tail -n12 fájl eleje és vége
+cp mkdir rmdir rm mv 
+chmod, chown
+groupadd új csoport
+chgrp 
+Servicek, processek:
+ps aux összes process
+killall kill-9 top
+fuser valaki foglalja e az adott portot
+iostat terhelés
+iostat másodpercek
+x másodpercenénk irja ki a io eszközök terhelését
+vmstat x ugyanaz mint az iostatps 
+lsof adott process milyen fájlokat használ
+ls & & jel miatt háttérben futtatja
+nohup akkor se álljon le ha kiléptem a shellből
+Centos rpm azon belül yum
+yum install csomag
+-y nem kéri megerősítést
+rpm csomag telepítése lokálisan
+rpm -i path/url
+yum automatikusan kielégíti a dependenciákat
+ha bárhonnan akarjuk futtatni rakjuk olyan helyre ami benne van a PATH változóban
+daemon
+elindtitantak process-t ami háttérben fut
+valahova a kimenetet iráénytani kell forkolnak, több darab fut belőlük
+apache install
+httpd -DFOREGROUND
+password: dockerwork
+buildah podman
+platform virutalizáció like VirtualBox
+teljes izoláció emulált gép
+amazon google azure digital ocean
+skálázható gmbnymás ram tárhely
+flexibilis könnyű migrálni
+gyorsan klónozható
+docker nem platformvirtualizációs technika
+alkalmazásvirtualizáció bizonyos alaklamazáspokat izolált környezetbedn futtatunk
+oprendszer szintű
+már futó container docker attach
+--add-host
+	container host file-ba host ip
+--cpu-count
+--device ritkán használt külső eeszközök beadása
+--dns melyik dns-szervert
+-e környezeti vált.
+-h host name
+--expose
+--log-driver l
+-m memory limit 
+--network lsd később
+-p u know
+--priviliged konténer maga root ként fut nem illik használni
+--restart leáll a konténer mi történjen semmi, always mindig ujraindul, unless-stopped ujraindul a konténer kivéve explicit leállítom
+--user választhatun a konténeren belüli userek közul
+-v volume-ok kezelése
+Image vs Konténerek
+docker stats konténer statisztikák
+docker top apache konténerben mi fut linux top parancsnak felel meg
+docker logs <konténer>
+
+
+docker exec -it apache /bin/bash
+
+docker exec -u root apache ls
+milyen user-el fusson le
+
+docker run --name apache2 -p 8080:80 -d httpd:2.4
+
+
+--link docker run paramétere <>
+arról szol ha elinditun ekgy új konténert akkkor megadhatjuk hogy kapcsolódjon hozzá egy másikhoz 
+docker run --link apache2 --name apacheother -d httpd:2.4
+docker exec -it apacheother /bin/bash
+
+apt-get update
+apt-get install iputils-ping
+ping apache2
+
+Image-ek
+dockerhub
+
+pull layerek letöltése
+letöltött image lementődött 
+
+/var/lib/docker
+alatt
+
+docker save httpd > http.tar
+lementjük az image-t effekive tar formátumban vannak
+
+docker load -i http.tar
+visszatöltjük a kimentett image-t
+van hogy containert mentünk ki és töltunk be az import/export
+a filesystem ből készítünk egy image-t
+ezzel snapshotolni tujuk  a konténerünket
+docker export konténer > valami.tar
+ebből egy egy rétegű image lesz nem tudunk konrkétan konténert menteni csak image-t
+docker image list --no-trunc
+
+docker image prune azokat az image-t dobálja ki amiket nem találunk
+docker image -a prune töröl minden image-t amihez nem tartozik konténer
+
+
+direktbe is lehet rörölni
+név, id alapján
+docker image inspect hogy épül fel az image	
+ue konténerekkel is 
+docker inspect <konténer név>
+
+
+docker container prune kidobálja a leállt konténereket
+ip címek
+címkiosztás
+statikus dinamikus
+port forwarding dmz
+docker default 172.16.0.0 tartományra rakja ki a dolgokat
+route
+/etc/services
+gyakoribb portok listázva vannak
+
+
+Perzisztencia
+copyonwrite mechanizmus, valóságba nem másolódik
+datavolume
+docker volumok nem dobódnak el konténer törlésekor
+docker saját maga intézi
+volumes könyvtárat
+docker volume create testvolume
+docker volume inspect testvolume
+docker volume rm testvolume
+
+
+docker pull mysql:latest
+docker run --name mysqltest -e MYSQL_ROOT_PASSWORD=12345 --rm -d mysql:latest 
+docker volume create --name mysqlvol
+docker run --name mysqltest -e MYSQL_ROOT_PASSWORD=12345 -v mysqlvol:/var/lib/mysql -d mysql:latest
+docker exec mysqltest ls -la /var/lib/mysql
+
+
+saját mappába
+mkdir data
+docker run --name mysqltest_3 -e MYSQL_ROOT_PASSWORD=12345 -v ~/data:/var/lib/mysql -d mysql:latest
+docker run --name mysqltest_3 -e MYSQL_ROOT_PASSWORD=12345 -v /home/student/data:/var/lib/mysql -d mysql:latest
+igy ha be van kapcsolva az enforcing akkor nem tud irni a docker a megadott mappába
+
+
+docker run --name mysqltest_3 -e MYSQL_ROOT_PASSWORD=12345 -v ~/data:/var/lib/mysql:Z -d mysql:latest
+:Z felülírja azt hogy ne írhasson a docker a user mappájába
+nano /etc/sysconfig/selinux
+meglévő konténernek is lehet volume-át modosítani
+de akár futási időben is lehet
+nem biztos hogy azok a userek amik megvannak kint nem biztos hogy megvannak a konténeren belül 
+pl student uuid 1000
+mysql user a konténeren belüli id-ja 30 pl
+és okozhat gondot
+
+10.09:
+dev és prod környezet kezelése
+ssh-keygen generált kulcs:
+/home/student/.ssh/id_rsa.pub
+ez kell majd github-ra bemásolni
+a use ssh alatt
+docker run -it --name dancertest --rm -p 3000:3000 -v "$PWD/dance.pl":/usr/src/dance.pl fedora:30 perl /usr/src/dancer.pl
+docker commit cdinál az aktuáls konténerből egy image-t és beteszi a mi image-ink közé plusz egy layert tesz bele ami a konténerbe történt változtatásokat tartalmazza
+docker run -it --name dancertest2 --rm -p 3000:3000 -v "$PWD/dance.pl":/tmp/dance.pl:Z test/dancertest:latest perl /tmp/dance.pl
+
+docker run -it --name dancertest -p 3000:3000 -v "$PWD/dance.pl":/usr/src/dance.pl fedora:30 /bin/bash
+
+Production verzió:
+docker cp ./dance.pl b197127181e5:/usr/src/
+docker commit b197127181e5 test/dancertest:release
+docker run test/dancertest:release perl /usr/src/dance.pl
+
+
+Image-ek létrehozása
+Dockerfile 
+kiindulo image és change-ket hajtunk végre
+lehet from scratch
+kell egy kontextus hogy mi a host rootja
+ha tele van minden szeméttel kontextusba található minden file-t be kell töltenie a docker daemon-ba
+van docker ignore file
+ahol ki lehet kapcsolni a fájlokat
+úgy rendezzük a docker file-unkat akkor az első lépéseket elhetőleg rögzitsuk
+túl sok layer nem jó
+30 sor plmegpróbáljuk összevonni őket
+scripteket hívhatunk futtathatunk
+ADD parancsal url-t is
+CMD ENTRYPOINT image default parancsát állíthatjuk ha nem irunk be parancsot akkor is fut egy parancs 
+ENV ARG paraméterek 
+USERS egy sudo  vagy su ezzel egy 
+WORKDIR meg tudjuk változtatni melyik mappába legyünk
+VOLUME 
+
+FROM
+scratch nincs kiindulo image
+AS új nev az miage-nek
+RUN aktuális user direktiva szerint beállított user nevében fog futni
+&& jel összefűzi a parancsokat csökkenthetjük a layerek számát
+COPY 
+Fájlokat másolhatunk be az image-be 
+relatív kontexthaz képest
+megcsinálja a teljes direktory struktúrát
+ADD majdnem ugyanaz mint a COPY normál fájlok esetén ugyanaz
+webcímet addhatunk meg és befetcheéei 
+ha archív akkor felismeri és kitömörítve másolja be
+EXPOSE kinyitható port konténerek között
+egymás között tudnak kommunkálni a konténerek
+nem muszály egyportot expose-olni
+ha nem irom be az expose-t és van két konténerem akkor azok nem tudnak beszélgetni
+USER 
+onnantól azzal a userrel fog működni 
+id-val és gruoppal is működik
+WORKDIR
+cd parancsnak felel meg COPY-ADD RUN CMD parancsok rootja
+CMD parancs 
+3 verzió szintaktikai
+ebből 1 darab lehet egy docker file-ban
+CMD-t lehet entry pointnak paramétereket
+ENTRYPOINT ha olyan konténer
+
+linux CMD parancs lesz
+cmd-ben felsorol paraméterei azok leszek aparaméterei az entrypointnak
+
+ENV környezeti változók
+ARG ugyanaz mint az env csak ez a build folyamat alatt él
+ENV erősebb mint az ARG ha ugyanaz a név
+VOLUME
+VOLUME path 
+inicializálási célra
+amit megadunk utvonal azt létrehozza mint colume és bemásolja az image-be
+pl bináris db 
+LABEL
+STOPSIGNAL konténer stopsignal
+SHELL shell kiválasztása
+HEALTHCHECK egésségi állapota  a konténernek
+docker build . aktuális könyvtárban keresi a Dockerfile-t
+-f megadom mi legyen a dockerfile neve
+--no-cache ne buildelje ujra a változásokat hanem elejéről lefut
+-t tag
+--sqash=true layerek törlése optimalizáció a nem használt layerek törlése
+--pull=true FROM image frissítése ha válzotott a base image
+.dockerignore directoryk file-ok kizárása a build ből
+entrypoint paramétere egy cmd
+docker build -t test/dacertest:new .
+docker run -d --rm --name dance -p 3000:3000 test/dacertest:new
+ha be van copyzva a fálj attól még be lehet mountolni
+-v vel felül lehet írni
+docker run -d --rm --name dance2 -p 3000:3000 -v "$PWD/dance.pl":/usr/src/dance.pl:Z test/dacertest:new
+ezt nem mindig leet megcsinálni és külön Dockerfile kell dev és prodnak is
+docker run test/dacertest:new -e "print time x 10"
+akkor kell sh scirpt ha alkalmazásunk nem tudo daemon ként futni hanem el ekll kogy inditsuk
+ilyenkor sh-t bemásoljuk az image-be
+2 from a Dockerfile-ban csinálunk egy olyan image-t aminek segítségével tudunk buildelni de ne használjuk fel a végső imageben ennek az image-nek a layereit
+végsőben már csak egy default centos -ra épít
+https://hub.docker.com/r/zabbix/zabbix-agent/dockerfile
+two-stage build
+
+https://hub.docker.com/r/mariadb/server/dockerfile
+bionic ubuntura épül
+mysql user
+felrak egy csomó mindent vlamit github-ról
+sh fájlba csomagolja be a mysql hívást
+
+FROM centos:7
+RUN yum update && yum -y install zsh
+CMD ["/bin/zsh"]
+docker build -t centos:zsh .
+docker run -it centos:zsh
+echo $0
+show databases;
+
+docker-compose
+egy script futtatható 
+lehet több compose fájlunk
+buildelni is tud helyettünk ha megadjuk a dockerfilet abuild alatt
+docker-compose build
+docker-compose up
+docker-compose down
+-f meg tudjuk adni konfig file
+docker-compose -f docker-compose.yml up dancerdev
+egy bizonyos service-t is el tudok inditani a következő modon a többi bántása nélkül
+start stop is van
+up down leállitja és törli erőszakos
+stop start megtartja a konténereket
+services definiáljuk a konténereket 
+networks volumes mappelődik a network és volumes parancsokra
+commands a kontérerben futó parancs 
+depends_on ellenörzi hogy elindult e az adott service konténer
+deploy swarn környezetben használats
+image 
+Links konténerek osszekapcs
+logging 
+netwokrs
+volumes tudunk kijelölni
+novnc
+mi van ha több process kell egy konténerbe?
+megprobáljuk szétszedni külső konténerekre
+kiemeljük a dockerből a schedulinget 
+vagy direkt egy konténert arra a célra hogy másokat hivogasson
+shell dockerből és onnan egy release
+megadja volumeként a projekt mappát
+és onnan futtatva a script-et konténeren belül
+docker dockeren belül
+provisioning, autiomatizált skálázás
+kis cluster
+pl többszáílusitott selenium
+priviliged: true root ként tudjuk használni a docker socket-et
+
+Docker SWARM
+CLUSTERing management/scheduling
+vannak node-ok azokon futnak dockerek bekapcsolva
+manager legalább 1 kell worker nem feltétlen kell ha csak ki akarjuk próbálni
+docker stack és docker service
+-create run csak swarmod környezetbe
+--rm 
+docker-compose -al akarjk akkor stack parancsal
+docker swarm init
+ha több ip van akkor nem tudja melyikhez bindoljon ekkor explicit meg kell adni
+ha további gépeket akarunk akkor ezzel a parancsal meg lehetne tenni amik workerek lesznek
+    docker swarm join \
+    --token SWMTKN-1-0hgypjffxbc3gji4er5rtkd0dfplhj22xom0q8stskdgkw9jl8-56c51t9peuo8oc0n6rtg0iwyc \
+    10.0.2.15:2377
+ha meg akarjuk szüntetni akkor docker swarm leave
+docker swarm leave --force elhagyjuk a swarmot
+gyári apache x példányban
+docker service create 
+docker service create --replicas=3 --name apacher -p 8080:80 httpd:2.4
+docker service ps apacher
+docker service inspect apacher
+skálázás:
+docker service scale apacher=5
+lefelé is lehet skálázni
+mi alapján nyirja ki őket?
+standard stop van rajta
+azokta lövi le amelyeken nincs connection
+docker service rm apacher
+hproxy routing a node-okhoz
+vagy egy hosthoz több ip
+Volume-ok
+hogy kerül be az image a node-baM
+registryből szedi
+networking:
+docker alapbol csinál egy default bridget
+nem vették ki belőle
+mindazonáltal nem adunk meg semmit erre  a def -re fog csatlakozni
+egymással alapból nem tudnak beszélni
+nem publisheltük a portot akkor nem tudnak beszélni
+ha magunk csinálunk egy bridget akkor az már méskéooen fog működni és nem kell portot nyitni  és látjék egymást
+ha compsban nem nyitunk portot és látjál egymást
+link se szükséges mert látják egymást
+docker network ls
+runtime fel és le tudjuk csatolni
+network typeok
+bridge össze vannak kötve akont.
+host összekötjük a host networkjére
+overlay swarm használja
+macvlan saját mac cime van tudunk a konténerekhez saját mac cimet adni
+
+dockr compose
+van network
+default nw-t adhatunk meg
+amenyiben nem adjuk meg a nw-t akkor a default-ot használja
+nw-t nem a compose file-okban
+ha vannak spec direktivái akkor azt a dirver_opts alatt lehet megadni
+ipam subneteket definiálni
+
+Tick stack
+
+registry ssl-t kell felhúzni
+
+DevOPS vizsgából
+
+docker registry
+
+cat <<EOF > /etc/cron.d/letencrypt
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+30 2 * * 1 root /usr/bin/certbot renew >> 
+/var/log/letsencrypt-renew.log && 
+cd /etc/letsencrypt/live/example.com && 
+cp privkey.pem domain.key && 
+cat cert.pem chain.pem > domain.crt && 
+chmod 777 domain.*
+EOF
+
